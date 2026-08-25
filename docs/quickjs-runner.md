@@ -8,7 +8,7 @@ network API.
 
 This document explains the guarantees implemented by the runner, how the
 `code-bridge-v1` host participates in them, and which guarantees still require
-Maelys Executor.
+Maelys Warden.
 
 ## Architecture
 
@@ -219,7 +219,7 @@ flowchart TB
     Q["QuickJS realm<br/>no ambient APIs"]
     W["Per-execution tool allowlist"]
     H["Host dispatcher<br/>schema + effect + policy"]
-    X["Maelys Executor<br/>empty environment, private temp,<br/>NETWORK_NONE, bounded stop"]
+    X["Maelys Warden<br/>empty environment, private temp,<br/>NETWORK_NONE, bounded stop"]
 
     J --> Q --> W --> H
     X -.->|OS containment around runner process| Q
@@ -230,7 +230,7 @@ No single layer is presented as sufficient:
 1. the QuickJS realm removes ambient JavaScript capabilities;
 2. the execution catalogue grants only named tool capabilities;
 3. the host revalidates every call and applies effect policy;
-4. Maelys Executor supplies the actual operating-system boundary and forced
+4. Maelys Warden supplies the actual operating-system boundary and forced
    process-tree termination.
 
 ## Limits and non-guarantees
@@ -299,13 +299,13 @@ make tsan
 make fuzz-smoke
 ```
 
-The cross-project OS-confinement test belongs to Maelys Executor, not this
+The cross-project OS-confinement test belongs to Maelys Warden, not this
 repository:
 
 ```sh
-make -C /path/to/maelys-executor code-runner-e2e \
+make -C /path/to/maelys-warden code-runner-e2e \
   CODE_RUNNER="$PWD/build/release/maelys-code-runner"
 ```
 
 See also the normative [`code-bridge-v1`](code-bridge-v1.md) contract and the
-[Executor integration](executor-integration.md) requirements.
+[Warden integration](warden-integration.md) requirements.

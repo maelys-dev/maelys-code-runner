@@ -123,7 +123,7 @@ install(FILES
   CHANGELOG.md
   VERSION
   docs/code-bridge-v1.md
-  docs/executor-integration.md
+  docs/warden-integration.md
   docs/quickjs-runner.md
   docs/releasing.md
   docs/release-0.1.0.md

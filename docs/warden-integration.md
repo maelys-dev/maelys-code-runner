@@ -1,4 +1,4 @@
-# Integration with Maelys Executor
+# Integration with Maelys Warden
 
 `maelys-code-runner` does not create its own OS sandbox. The launcher must use a
 sealed Executor plan with confinement required.
@@ -17,7 +17,7 @@ filesystem       runner + runtime libraries read-only; temporary dir writable
 timeouts         bounded graceful and forced stop
 ```
 
-Executor already provides the low-level pieces:
+Warden's low-level Executor engine provides these pieces:
 
 ```c
 maelys_execution_request_set_io_mode(
@@ -36,7 +36,7 @@ and consumes the terminal `execution.result`.
 
 ## Node integration
 
-`@maelys/executor` exposes the isolated protocol and lifecycle through
+`@maelys/warden` exposes the isolated protocol and lifecycle through
 `spawnIsolated()`:
 
 ```ts
@@ -59,6 +59,6 @@ protocol and diagnostic streams.
 The reproducible cross-project check is:
 
 ```sh
-make -C /path/to/maelys-executor code-runner-e2e \
+make -C /path/to/maelys-warden code-runner-e2e \
   CODE_RUNNER=/path/to/maelys-code-runner/build/release/maelys-code-runner
 ```

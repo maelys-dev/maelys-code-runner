@@ -10,7 +10,7 @@ channel. Native limits and terminal latches prevent generated `try/catch` from
 turning quota, timeout, cancellation, protocol or oversized-result failures
 into success.
 
-Production confinement requires Maelys Executor 0.13.0 or later with a real
+Production confinement requires Maelys Warden 0.14.0 or later with a real
 Seatbelt or Bubblewrap backend, `NETWORK_NONE`, an empty environment and a
 private temporary workspace. The runner alone is not an operating-system
 sandbox.
