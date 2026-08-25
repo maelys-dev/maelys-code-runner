@@ -27,7 +27,7 @@ jobs:
             compiler: clang
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Configure
         env:
           CC: ${{ matrix.compiler }}
@@ -64,7 +64,7 @@ jobs:
     name: sanitizers (${{ matrix.name }})
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Configure
         run: >-
           cmake -S . -B build/${{ matrix.name }} -DCMAKE_BUILD_TYPE=Debug
@@ -81,7 +81,7 @@ jobs:
   fuzz-smoke:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install Clang
         run: sudo apt-get update && sudo apt-get install --yes clang
       - name: Run bounded bridge fuzzing
@@ -95,9 +95,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code runner
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Check out Maelys Executor 0.13.0
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           repository: maelys-dev/maelys-executor
           ref: 2b5d4719e49c99e49b18301cd9ba58b3a0f277bf
@@ -106,6 +106,9 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - name: Check out Executor's pinned dependencies
+        working-directory: maelys-executor
+        run: bash scripts/checkout-dependencies.sh
       - name: Install Bubblewrap
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --yes bubblewrap
@@ -127,7 +130,7 @@ jobs:
             target: macos-arm64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
       - name: Build deterministic archive
