@@ -15,10 +15,10 @@ make fuzz-smoke
 make install-check
 ```
 
-Then verify the real confinement path against the pinned Executor release:
+Then verify the real confinement path against the pinned Warden release:
 
 ```sh
-make -C /path/to/maelys-executor code-runner-e2e \
+make -C /path/to/maelys-warden code-runner-e2e \
   CODE_RUNNER="$PWD/build/release/maelys-code-runner"
 ```
 

@@ -14,7 +14,7 @@ MCP provider
     │
     │ code-bridge-v1
     ▼
-maelys-executor
+maelys-warden
     │ NETWORK_NONE + filesystem-minimal plan
     ▼
 maelys-code-runner
@@ -30,7 +30,7 @@ response correlation.
 
 This capability-empty context is one layer, not the complete OS boundary.
 Strong `NETWORK_NONE`, filesystem denial and forced process-tree termination
-must be supplied by Maelys Executor. See [security model](SECURITY.md).
+must be supplied by Maelys Warden. See [security model](SECURITY.md).
 
 ## Build and test
 
@@ -86,6 +86,6 @@ value.
 
 - [QuickJS runner and capability boundary](docs/quickjs-runner.md)
 - [code-bridge-v1](docs/code-bridge-v1.md)
-- [Executor integration](docs/executor-integration.md)
+- [Warden integration](docs/warden-integration.md)
 - [Security policy](SECURITY.md)
 - [Release process](docs/releasing.md)
