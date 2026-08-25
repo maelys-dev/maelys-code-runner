@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            compiler: clang
+          - os: ubuntu-24.04
+            compiler: gcc
+          - os: macos-15
+            compiler: clang
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Configure
+        env:
+          CC: ${{ matrix.compiler }}
+        run: cmake -S . -B build/ci -DCMAKE_BUILD_TYPE=Release
+      - name: Verify version and immutable dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(sed -n 's/^project(maelys-code-runner VERSION \([^ ]*\).*/\1/p' CMakeLists.txt)" = "$(cat VERSION)"
+          test "$(git -C build/ci/_deps/quickjs_ng-src rev-parse HEAD)" = "fd0a0210b7be00957751871e7e01b8291268fc29"
+          test "$(git -C build/ci/_deps/jansson-src rev-parse HEAD)" = "dbb5fb3636e155fccfce4cd215de752779bd6971"
+      - name: Build
+        run: cmake --build build/ci --parallel
+      - name: Test
+        run: ctest --test-dir build/ci --output-on-failure
+      - name: Verify installation
+        run: |
+          cmake --install build/ci --prefix "$RUNNER_TEMP/install"
+          test "$("$RUNNER_TEMP/install/bin/maelys-code-runner" --version)" = "$(cat VERSION)"
+          test -f "$RUNNER_TEMP/install/share/doc/maelys-code-runner/licenses/LICENSE.quickjs-ng"
+          test -f "$RUNNER_TEMP/install/share/doc/maelys-code-runner/licenses/LICENSE.jansson"
+
+  sanitizers:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: asan-ubsan
+            options: >-
+              -DMAELYS_CODE_RUNNER_ENABLE_ASAN=ON
+              -DMAELYS_CODE_RUNNER_ENABLE_UBSAN=ON
+          - name: tsan
+            options: -DMAELYS_CODE_RUNNER_ENABLE_TSAN=ON
+    name: sanitizers (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Configure
+        run: >-
+          cmake -S . -B build/${{ matrix.name }} -DCMAKE_BUILD_TYPE=Debug
+          ${{ matrix.options }}
+      - name: Build
+        run: cmake --build build/${{ matrix.name }} --parallel
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+          TSAN_OPTIONS: halt_on_error=1
+        run: ctest --test-dir build/${{ matrix.name }} --output-on-failure
+
+  fuzz-smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install Clang
+        run: sudo apt-get update && sudo apt-get install --yes clang
+      - name: Run bounded bridge fuzzing
+        run: make fuzz-smoke FUZZ_CC=clang
+
+  executor-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code runner
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Check out Maelys Executor 0.13.0
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: maelys-dev/maelys-executor
+          ref: 2b5d4719e49c99e49b18301cd9ba58b3a0f277bf
+          path: maelys-executor
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install Bubblewrap
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes bubblewrap
+      - name: Build code runner
+        run: make all
+      - name: Run through the real confining backend
+        run: >-
+          make -C maelys-executor code-runner-e2e
+          CODE_RUNNER="$GITHUB_WORKSPACE/build/release/maelys-code-runner"
+
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: linux-x86_64
+          - os: macos-15
+            target: macos-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Build deterministic archive
+        run: python3 scripts/package-release.py ${{ matrix.target }}
+      - name: Verify checksum and archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd dist && shasum -a 256 -c -- ./*.sha256)
+          mkdir "$RUNNER_TEMP/package"
+          tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/package"
+          binary="$(find "$RUNNER_TEMP/package" -type f -path '*/bin/maelys-code-runner' -print -quit)"
+          test "$($binary --version)" = "$(cat VERSION)"

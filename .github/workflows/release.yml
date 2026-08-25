@@ -1,0 +1,97 @@
+name: release
+
+# A cryptographically signed vX.Y.Z tag is the authorization ceremony.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: linux-x86_64
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+          - os: macos-15
+            target: macos-arm64
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Verify version and signed annotated tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "v$(cat VERSION)" = "${GITHUB_REF_NAME}" \
+            || { echo "tag ${GITHUB_REF_NAME} does not match VERSION"; exit 1; }
+          test "$(sed -n 's/^project(maelys-code-runner VERSION \([^ ]*\).*/\1/p' CMakeLists.txt)" = "$(cat VERSION)" \
+            || { echo "CMake version does not match VERSION"; exit 1; }
+          tag_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" --jq .object.sha)"
+          verified="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_sha}" --jq .verification.verified)"
+          test "$verified" = true \
+            || { echo "${GITHUB_REF_NAME} is not a verified signed annotated tag"; exit 1; }
+          git fetch origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" \
+            || { echo "release tag must point at the current main commit"; exit 1; }
+      - name: Build deterministic archive
+        run: python3 scripts/package-release.py ${{ matrix.target }}
+      - name: Test packaged build tree
+        run: ctest --test-dir build/package-${{ matrix.target }} --output-on-failure
+      - name: Verify archive
+        run: (cd dist && shasum -a 256 -c -- ./*.sha256)
+      - name: Attest artifact provenance
+        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1
+        with:
+          subject-path: 'dist/*.tar.gz'
+      - name: Upload internal artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    environment: release
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: incoming
+      - name: Verify and assemble release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          find incoming -type f \( -name '*.tar.gz' -o -name '*.sha256' \) -exec cp {} dist/ \;
+          (cd dist && sha256sum -c -- ./*.sha256)
+          (cd dist && sha256sum -- ./*.tar.gz >SHA256SUMS)
+          ls -1 dist
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "maelys-code-runner ${GITHUB_REF_NAME#v}" \
+            --notes-file "docs/release-${GITHUB_REF_NAME#v}.md" \
+            --verify-tag \
+            dist/*

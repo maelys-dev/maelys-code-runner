@@ -1,0 +1,7 @@
+/build/
+/dist/
+/.cache/
+compile_commands.json
+*.dSYM/
+__pycache__/
+*.py[cod]
