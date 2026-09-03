@@ -105,7 +105,7 @@ class CodeBridgeV1Conformance(unittest.TestCase):
             execution_id="clamped",
         )
         self.assertEqual(ready["executionId"], "clamped")
-        self.assertEqual(ready["runnerVersion"], "0.1.0")
+        self.assertEqual(ready["runnerVersion"], "0.1.1")
         self.assertEqual(ready["effectiveLimits"], {
             "maxToolCalls": 32,
             "maxResultBytes": 1024,

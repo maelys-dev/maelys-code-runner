@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 — 2026-09-03
+
+- Relicense from Apache-2.0 to the Mozilla Public License 2.0, the license
+  of every Maelys repository. No code change.
 
 ## 0.1.0 — 2026-08-25
 
