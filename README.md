@@ -89,3 +89,8 @@ value.
 - [Warden integration](docs/warden-integration.md)
 - [Security policy](SECURITY.md)
 - [Release process](docs/releasing.md)
+
+## License
+
+Mozilla Public License 2.0 ([LICENSE](LICENSE)), like every Maelys repository.
+Third-party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

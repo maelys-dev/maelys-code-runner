@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(maelys-code-runner VERSION 0.1.0 LANGUAGES C)
+project(maelys-code-runner VERSION 0.1.1 LANGUAGES C)
 
 include(FetchContent)
 include(CTest)

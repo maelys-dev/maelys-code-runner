@@ -70,7 +70,7 @@ MUST report the values it retained before executing generated code:
   "version": "code-bridge-v1",
   "type": "ready",
   "executionId": "01J...",
-  "runnerVersion": "0.1.0",
+  "runnerVersion": "0.1.1",
   "effectiveLimits": {
     "maxToolCalls": 32,
     "maxResultBytes": 524288,

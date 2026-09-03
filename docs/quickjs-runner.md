@@ -107,7 +107,7 @@ retained by the runner:
   "version": "code-bridge-v1",
   "type": "ready",
   "executionId": "example-1",
-  "runnerVersion": "0.1.0",
+  "runnerVersion": "0.1.1",
   "effectiveLimits": {
     "maxToolCalls": 32,
     "maxResultBytes": 262144,
