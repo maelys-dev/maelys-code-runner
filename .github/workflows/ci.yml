@@ -83,7 +83,11 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Install Clang
-        run: sudo apt-get update && sudo apt-get install --yes clang
+        run: |
+          # A broken third-party apt source of the runner image must not fail an
+          # install of Ubuntu archive packages: the update reports, the install decides.
+          sudo apt-get update || echo "::warning::apt-get update reported errors; the install decides"
+          sudo apt-get install --yes clang
       - name: Run bounded bridge fuzzing
         run: make fuzz-smoke FUZZ_CC=clang
 
@@ -111,7 +115,11 @@ jobs:
         run: bash scripts/checkout-dependencies.sh
       - name: Install Bubblewrap
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install --yes bubblewrap
+        run: |
+          # A broken third-party apt source of the runner image must not fail an
+          # install of Ubuntu archive packages: the update reports, the install decides.
+          sudo apt-get update || echo "::warning::apt-get update reported errors; the install decides"
+          sudo apt-get install --yes bubblewrap
       - name: Build code runner
         run: make all
       - name: Run through the real confining backend
